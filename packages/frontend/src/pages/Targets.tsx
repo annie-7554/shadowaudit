@@ -141,8 +141,8 @@ export const Targets: React.FC = () => {
         type: form.type,
         value: form.value,
         createdAt: new Date().toISOString(),
-        lastScannedAt: undefined,
-        lastScanStatus: 'never',
+        lastScannedAt: null,
+        status: 'never_scanned',
       };
       setTargets((prev) => [...prev, mockTarget]);
       setForm({ name: '', type: 'npm', value: '' });

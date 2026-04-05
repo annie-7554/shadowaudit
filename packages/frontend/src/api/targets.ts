@@ -2,10 +2,10 @@ import client from './client';
 import type { Target, ScanResult } from '../types';
 
 const MOCK_TARGETS: Target[] = [
-  { id: '1', name: 'my-api', type: 'image', value: 'my-api:latest', createdAt: new Date().toISOString(), lastScannedAt: new Date().toISOString(), lastScanStatus: 'vulnerable' },
-  { id: '2', name: 'frontend', type: 'image', value: 'nginx:1.24', createdAt: new Date().toISOString(), lastScannedAt: new Date().toISOString(), lastScanStatus: 'vulnerable' },
-  { id: '3', name: 'express app', type: 'npm', value: 'express@4.18.0', createdAt: new Date().toISOString(), lastScannedAt: new Date().toISOString(), lastScanStatus: 'clean' },
-  { id: '4', name: 'worker', type: 'filesystem', value: './packages/scanner', createdAt: new Date().toISOString(), lastScannedAt: undefined, lastScanStatus: 'never' },
+  { id: '1', name: 'my-api', type: 'docker', value: 'my-api:latest', createdAt: new Date().toISOString(), lastScannedAt: new Date().toISOString(), status: 'vulnerable' },
+  { id: '2', name: 'frontend', type: 'docker', value: 'nginx:1.24', createdAt: new Date().toISOString(), lastScannedAt: new Date().toISOString(), status: 'vulnerable' },
+  { id: '3', name: 'express app', type: 'npm', value: 'express@4.18.0', createdAt: new Date().toISOString(), lastScannedAt: new Date().toISOString(), status: 'clean' },
+  { id: '4', name: 'worker', type: 'filesystem', value: './packages/scanner', createdAt: new Date().toISOString(), lastScannedAt: null, status: 'never_scanned' },
 ];
 
 export async function getTargets(): Promise<Target[]> {
