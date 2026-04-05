@@ -134,18 +134,7 @@ export const Targets: React.FC = () => {
       setForm({ name: '', type: 'npm', value: '' });
       await fetchTargets();
     } catch {
-      // Backend not running — add locally as mock
-      const mockTarget: Target = {
-        id: String(Date.now()),
-        name: form.name,
-        type: form.type,
-        value: form.value,
-        createdAt: new Date().toISOString(),
-        lastScannedAt: null,
-        status: 'never_scanned',
-      };
-      setTargets((prev) => [...prev, mockTarget]);
-      setForm({ name: '', type: 'npm', value: '' });
+      setFormError('Failed to register target. Is the backend running?');
     } finally {
       setSubmitting(false);
     }
@@ -155,10 +144,10 @@ export const Targets: React.FC = () => {
     if (!window.confirm(`Delete target "${target.name}"? This cannot be undone.`)) return;
     try {
       await deleteTarget(target.id);
+      setTargets((prev) => prev.filter((t) => t.id !== target.id));
     } catch {
-      // Backend not running — remove locally
+      alert('Failed to delete target. Is the backend running?');
     }
-    setTargets((prev) => prev.filter((t) => t.id !== target.id));
   };
 
   return (
