@@ -1,0 +1,293 @@
+/* =============================================
+   ShadowAudit — Sharp Dark Theme
+   No rounded corners. No blue. Pure edge.
+   ============================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:        #0a0a0a;
+  --surface:   #111111;
+  --surface2:  #1a1a1a;
+  --border:    #2a2a2a;
+  --border2:   #333333;
+  --text:      #e8e8e8;
+  --text-muted:#666666;
+  --text-dim:  #444444;
+  --accent:    #d4ff00;      /* sharp lime/yellow — no blue */
+  --critical:  #ff3333;
+  --high:      #ff8c00;
+  --medium:    #ffcc00;
+  --low:       #39ff14;
+  --clean:     #39ff14;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* ---- Nav ---- */
+.sa-nav {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 0 32px;
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.sa-nav-logo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sa-nav-links {
+  display: flex;
+  gap: 0;
+  list-style: none;
+}
+
+.sa-nav-link {
+  padding: 6px 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  transition: color 0.1s;
+  border-bottom: 2px solid transparent;
+}
+
+.sa-nav-link:hover {
+  color: var(--text);
+}
+
+.sa-nav-link.active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ---- Layout ---- */
+.sa-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px;
+}
+
+/* ---- Cards — sharp, no radius ---- */
+.sa-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 24px;
+}
+
+/* ---- Typography ---- */
+.sa-page-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-page-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1.1rem;
+  background: var(--accent);
+}
+
+.sa-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+/* ---- Tables ---- */
+.sa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.sa-table thead tr {
+  background: var(--surface2);
+}
+
+.sa-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--border2);
+}
+
+.sa-table td {
+  padding: 11px 16px;
+  color: var(--text);
+}
+
+.sa-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.08s;
+}
+
+.sa-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.sa-table tbody tr:hover {
+  background: var(--surface2);
+}
+
+/* ---- Form elements ---- */
+.sa-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.sa-input {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 0;
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.sa-input:focus {
+  border-color: var(--accent);
+}
+
+.sa-input option {
+  background: var(--surface);
+}
+
+/* ---- Buttons ---- */
+.sa-btn-primary {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 0;
+  padding: 9px 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.sa-btn-primary:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.sa-btn-primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sa-btn-danger {
+  background: transparent;
+  color: var(--critical);
+  border: 1px solid #ff333344;
+  border-radius: 0;
+  padding: 5px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sa-btn-danger:hover {
+  background: #ff333318;
+}
+
+.sa-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border2);
+  border-radius: 0;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.sa-btn-ghost:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+/* ---- Severity badges — sharp tags ---- */
+.badge-critical { color: var(--critical); background: #ff333315; border: 1px solid #ff333444; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; }
+.badge-high     { color: var(--high);     background: #ff8c0015; border: 1px solid #ff8c0044; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; }
+.badge-medium   { color: var(--medium);   background: #ffcc0015; border: 1px solid #ffcc0044; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; }
+.badge-low      { color: var(--low);      background: #39ff1415; border: 1px solid #39ff1444; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; }
+.badge-unknown  { color: var(--text-muted); background: transparent; border: 1px solid var(--border2); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px; }
+
+/* ---- Loading skeleton animation ---- */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }

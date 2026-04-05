@@ -1,0 +1,182 @@
+name: Nightly Security Scan
+
+on:
+  # Run every day at 02:00 UTC
+  schedule:
+    - cron: '0 2 * * *'
+  # Allow manual execution from the Actions UI
+  workflow_dispatch:
+
+jobs:
+  nightly-trivy-scan:
+    name: Nightly Trivy Audit
+    runs-on: ubuntu-latest
+
+    # Permissions needed to open GitHub Issues when new CVEs are detected
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      # Write a full filesystem CVE report for all severities (informational)
+      - name: Trivy — full filesystem scan (all severities, JSON)
+        run: |
+          trivy fs \
+            --ignore-unfixed \
+            --severity LOW,MEDIUM,HIGH,CRITICAL \
+            --format json \
+            --output trivy-fs-report.json \
+            .
+        continue-on-error: true
+
+      # Emit a human-readable table of HIGH/CRITICAL findings
+      - name: Trivy — filesystem scan table (HIGH, CRITICAL)
+        id: fs_scan
+        run: |
+          trivy fs \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            . 2>&1 | tee trivy-fs-table.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # Scan for secrets committed to the repository
+      - name: Trivy — secret scan
+        id: secret_scan
+        run: |
+          trivy fs \
+            --scanners secret \
+            --exit-code 1 \
+            --format table \
+            . 2>&1 | tee trivy-secret-table.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # Scan K8s manifests for misconfigurations
+      - name: Trivy — K8s config scan
+        id: config_scan
+        run: |
+          trivy config \
+            --exit-code 1 \
+            --format table \
+            ./k8s 2>&1 | tee trivy-config-table.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # Upload all reports as downloadable artifacts for later review
+      - name: Upload scan reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-trivy-reports-${{ github.run_id }}
+          path: |
+            trivy-fs-report.json
+            trivy-fs-table.txt
+            trivy-secret-table.txt
+            trivy-config-table.txt
+          retention-days: 30
+
+      # Extract only the CRITICAL CVE IDs from the JSON report so we can
+      # include them in the issue body and avoid duplicate issue creation
+      - name: Extract CRITICAL CVE list
+        id: extract_cves
+        run: |
+          # Pull out unique CVE IDs rated CRITICAL; fall back gracefully if jq absent
+          if command -v jq &>/dev/null; then
+            CVES=$(jq -r '
+              [.. | objects | select(.Severity? == "CRITICAL") | .VulnerabilityID?]
+              | unique
+              | .[]
+            ' trivy-fs-report.json 2>/dev/null | head -50 | tr '\n' ',' | sed 's/,$//')
+          else
+            CVES="(install jq to list CVE IDs)"
+          fi
+          echo "critical_cves=${CVES}" >> "$GITHUB_OUTPUT"
+          # Report whether any CRITICAL findings exist (non-empty list = yes)
+          if [ -n "$CVES" ]; then
+            echo "has_criticals=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_criticals=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Open a GitHub Issue only when new CRITICAL CVEs are discovered.
+      # The issue title includes today's date so repeated runs create distinct issues.
+      - name: Create GitHub Issue for CRITICAL CVEs
+        if: steps.extract_cves.outputs.has_criticals == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            const cves  = `${{ steps.extract_cves.outputs.critical_cves }}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const fsExit     = '${{ steps.fs_scan.outputs.exit_code }}';
+            const secretExit = '${{ steps.secret_scan.outputs.exit_code }}';
+            const configExit = '${{ steps.config_scan.outputs.exit_code }}';
+
+            const body = [
+              `## 🚨 Nightly Security Scan — CRITICAL CVEs detected (${today})`,
+              ``,
+              `The scheduled Trivy scan found **CRITICAL** vulnerabilities in the \`main\` branch.`,
+              ``,
+              `### CRITICAL CVE IDs`,
+              `\`\`\``,
+              cves.split(',').join('\n'),
+              `\`\`\``,
+              ``,
+              `### Scan results`,
+              `| Scan | Exit code |`,
+              `|---|---|`,
+              `| Filesystem CVE (HIGH/CRITICAL) | ${fsExit === '0' ? '✅ 0' : '❌ ' + fsExit} |`,
+              `| Secret scan | ${secretExit === '0' ? '✅ 0' : '❌ ' + secretExit} |`,
+              `| K8s config | ${configExit === '0' ? '✅ 0' : '❌ ' + configExit} |`,
+              ``,
+              `### Actions required`,
+              `1. Review the full reports attached to the [workflow run](${runUrl}).`,
+              `2. Patch or update the affected packages.`,
+              `3. Re-run the scan to confirm remediation.`,
+              ``,
+              `> This issue was opened automatically by the nightly security scan workflow.`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `🔴 [Security] CRITICAL CVEs detected on main — ${today}`,
+              body,
+              labels: ['security', 'critical', 'automated'],
+            });
+
+      # Write a step summary regardless of whether an issue was opened
+      - name: Write scan summary
+        run: |
+          FS_STATUS="${{ steps.fs_scan.outputs.exit_code == '0' && '✅ Clean' || '❌ Findings' }}"
+          SEC_STATUS="${{ steps.secret_scan.outputs.exit_code == '0' && '✅ Clean' || '❌ Findings' }}"
+          CFG_STATUS="${{ steps.config_scan.outputs.exit_code == '0' && '✅ Clean' || '❌ Findings' }}"
+
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## 🔍 ShadowAudit — Nightly Security Scan
+
+          | Scan | Result |
+          |---|---|
+          | Filesystem CVE (HIGH/CRITICAL) | ${FS_STATUS} |
+          | Secret scan | ${SEC_STATUS} |
+          | K8s config scan | ${CFG_STATUS} |
+
+          **Run date:** $(date -u '+%Y-%m-%d %H:%M UTC')
+          **Branch scanned:** \`main\`
+          **CRITICAL CVEs found:** \`${{ steps.extract_cves.outputs.critical_cves || 'none' }}\`
+
+          Full reports are available as workflow artifacts (retained 30 days).
+          EOF

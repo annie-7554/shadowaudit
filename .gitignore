@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env*
+!.env.example
+coverage/
+*.log
+.DS_Store
+docker-compose.override.yml
+*.tsbuildinfo
+.vite/

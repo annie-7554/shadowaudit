@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadowaudit-bff
+  namespace: vulnwatch
+  labels:
+    app: shadowaudit-bff
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shadowaudit-bff
+  template:
+    metadata:
+      labels:
+        app: shadowaudit-bff
+    spec:
+      containers:
+        - name: bff
+          # CI replaces IMAGE_TAG via: sed -i "s/IMAGE_TAG/$SHA/g"
+          image: ghcr.io/OWNER/shadowaudit-bff:IMAGE_TAG
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: shadowaudit-config
+            - secretRef:
+                name: shadowaudit-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true

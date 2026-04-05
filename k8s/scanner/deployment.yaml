@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadowaudit-scanner
+  namespace: vulnwatch
+  labels:
+    app: shadowaudit-scanner
+spec:
+  # HPA will manage scaling beyond this baseline
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shadowaudit-scanner
+  template:
+    metadata:
+      labels:
+        app: shadowaudit-scanner
+    spec:
+      containers:
+        - name: scanner
+          # CI replaces IMAGE_TAG via: sed -i "s/IMAGE_TAG/$SHA/g"
+          image: ghcr.io/OWNER/shadowaudit-scanner:IMAGE_TAG
+          envFrom:
+            - configMapRef:
+                name: shadowaudit-config
+            - secretRef:
+                name: shadowaudit-secrets
+          # No livenessProbe — background worker without an HTTP endpoint
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            runAsNonRoot: true

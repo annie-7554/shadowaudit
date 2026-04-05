@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadowaudit-notifier
+  namespace: vulnwatch
+  labels:
+    app: shadowaudit-notifier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shadowaudit-notifier
+  template:
+    metadata:
+      labels:
+        app: shadowaudit-notifier
+    spec:
+      containers:
+        - name: notifier
+          # CI replaces IMAGE_TAG via: sed -i "s/IMAGE_TAG/$SHA/g"
+          image: ghcr.io/OWNER/shadowaudit-notifier:IMAGE_TAG
+          envFrom:
+            - configMapRef:
+                name: shadowaudit-config
+            - secretRef:
+                name: shadowaudit-secrets
+          # No livenessProbe — background worker without an HTTP endpoint
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            runAsNonRoot: true

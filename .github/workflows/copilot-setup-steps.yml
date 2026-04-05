@@ -1,0 +1,75 @@
+name: Copilot Setup Steps
+
+# This workflow pre-installs all tools and dependencies that GitHub Copilot
+# coding agent needs to work on the ShadowAudit monorepo. It runs before
+# any Copilot-assigned task begins, ensuring the environment is fully ready.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ─── Node.js ───────────────────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ─── Checkout (required before npm ci) ────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ─── npm workspaces – install all packages ────────────────────────────
+      - name: Install npm workspace dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      # Cache the compiled TypeScript output so incremental builds are fast
+      - name: Cache TypeScript build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/*/dist
+            packages/*/.tsbuildinfo
+          key: tsc-${{ runner.os }}-${{ hashFiles('packages/*/tsconfig.json', 'packages/*/src/**/*.ts') }}
+          restore-keys: |
+            tsc-${{ runner.os }}-
+
+      # ─── Trivy (latest) ────────────────────────────────────────────────────
+      - name: Install Trivy (latest)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+          trivy --version
+
+      # Update the Trivy vulnerability database so scans are up-to-date
+      - name: Update Trivy DB
+        run: trivy image --download-db-only
+
+      # ─── Docker CLI ────────────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Docker
+        run: docker version
+
+      # ─── kubectl ──────────────────────────────────────────────────────────
+      - name: Install kubectl (latest stable)
+        run: |
+          KUBECTL_VERSION=$(curl -sL https://dl.k8s.io/release/stable.txt)
+          curl -sLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
+      # ─── Tool version summary ─────────────────────────────────────────────
+      - name: Print tool versions
+        run: |
+          echo "=== Node.js ===" && node --version
+          echo "=== npm ===" && npm --version
+          echo "=== Trivy ===" && trivy --version
+          echo "=== kubectl ===" && kubectl version --client --short 2>/dev/null || kubectl version --client
+          echo "=== Docker ===" && docker --version

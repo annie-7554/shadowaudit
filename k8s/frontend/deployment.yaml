@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadowaudit-frontend
+  namespace: vulnwatch
+  labels:
+    app: shadowaudit-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shadowaudit-frontend
+  template:
+    metadata:
+      labels:
+        app: shadowaudit-frontend
+    spec:
+      containers:
+        - name: frontend
+          # CI replaces IMAGE_TAG via: sed -i "s/IMAGE_TAG/$SHA/g"
+          image: ghcr.io/OWNER/shadowaudit-frontend:IMAGE_TAG
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

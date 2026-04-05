@@ -1,0 +1,187 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ─── Job 1: Lint, build, and test all workspace packages ───────────────────
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 with npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (all workspaces)
+        run: npm ci
+
+      - name: Build TypeScript (all packages)
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ─── Job 2: Dependency and filesystem security scans ───────────────────────
+  security-scan-deps:
+    name: Security Scan (Deps & FS)
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Quick advisory pre-check — only blocks on HIGH and above
+      - name: npm audit (HIGH+)
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      # Block the pipeline if any unfixed HIGH or CRITICAL CVEs exist in the filesystem
+      - name: Trivy — filesystem CVE scan (HIGH, CRITICAL)
+        run: |
+          trivy fs \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            .
+
+      # Block the pipeline if hardcoded secrets are detected in source code
+      - name: Trivy — secret scan
+        run: |
+          trivy fs \
+            --scanners secret \
+            --exit-code 1 \
+            --format table \
+            .
+
+      # Block the pipeline on Kubernetes misconfiguration findings
+      - name: Trivy — K8s config scan
+        run: |
+          trivy config \
+            --exit-code 1 \
+            --format table \
+            ./k8s
+
+  # ─── Job 3: Build Docker images, scan each, push main-branch images ────────
+  docker-build-scan:
+    name: Docker Build & Scan (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: security-scan-deps
+
+    strategy:
+      matrix:
+        service: [bff, scanner, notifier, frontend]
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Authenticate against GHCR using the auto-generated GITHUB_TOKEN
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/shadowaudit-${{ matrix.service }}:${{ github.sha }} \
+            ./packages/${{ matrix.service }}
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      # Block the pipeline if the built image contains unfixed HIGH/CRITICAL CVEs
+      - name: Trivy — image CVE scan (HIGH, CRITICAL)
+        run: |
+          trivy image \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            ghcr.io/${{ github.repository_owner }}/shadowaudit-${{ matrix.service }}:${{ github.sha }}
+
+      # Only publish the image when merging/pushing to main
+      - name: Push image to GHCR
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker push \
+            ghcr.io/${{ github.repository_owner }}/shadowaudit-${{ matrix.service }}:${{ github.sha }}
+
+  # ─── Job 4: Print a human-readable summary of all CI checks ────────────────
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: docker-build-scan
+
+    steps:
+      - name: Write success summary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
+          ## ✅ ShadowAudit CI — All checks passed
+
+          | Check | Status |
+          |---|---|
+          | Lint & TypeScript build | ✅ Passed |
+          | Unit tests + coverage | ✅ Passed |
+          | npm audit (HIGH+) | ✅ Passed |
+          | Trivy filesystem CVE scan | ✅ Passed |
+          | Trivy secret scan | ✅ Passed |
+          | Trivy K8s config scan | ✅ Passed |
+          | Docker build — bff | ✅ Passed |
+          | Docker build — scanner | ✅ Passed |
+          | Docker build — notifier | ✅ Passed |
+          | Docker build — frontend | ✅ Passed |
+          | Trivy image scan — bff | ✅ Passed |
+          | Trivy image scan — scanner | ✅ Passed |
+          | Trivy image scan — notifier | ✅ Passed |
+          | Trivy image scan — frontend | ✅ Passed |
+
+          **Commit:** `${{ github.sha }}`
+          **Branch:** `${{ github.ref_name }}`
+          **Triggered by:** `${{ github.actor }}`
+          EOF

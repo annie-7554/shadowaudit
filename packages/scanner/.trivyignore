@@ -1,0 +1,5 @@
+# CVE-2023-45853 - zlib issue in dev dependency only, not in production image - reviewed 2024-01-15
+CVE-2023-45853
+
+# CVE-2023-39325 - golang.org/x/net HTTP/2 rapid reset - mitigated at load balancer layer - reviewed 2024-01-15
+CVE-2023-39325

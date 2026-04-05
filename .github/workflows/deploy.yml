@@ -1,0 +1,114 @@
+name: Deploy to Production
+
+on:
+  # Only run after the CI workflow completes successfully on main
+  workflow_run:
+    workflows:
+      - CI
+    branches:
+      - main
+    types:
+      - completed
+
+# Never cancel an in-progress deployment — let it finish to avoid partial state
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    environment: production
+
+    # Guard: only deploy if the triggering CI run actually succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Install kubectl from the official release channel
+      - name: Setup kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -sSL https://dl.k8s.io/release/stable.txt)
+          curl -sSLO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
+      # Decode the base64-encoded kubeconfig stored in the repository secret
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yml
+
+      - name: Set KUBECONFIG env var
+        run: echo "KUBECONFIG=${{ github.workspace }}/kubeconfig.yml" >> "$GITHUB_ENV"
+
+      # Replace the IMAGE_TAG placeholder in all manifests with the commit SHA
+      # so every deployment uses the exact image built and scanned in CI
+      - name: Substitute image tags in manifests
+        run: |
+          find k8s -name '*.yaml' -o -name '*.yml' | \
+            xargs sed -i "s|IMAGE_TAG|${{ github.sha }}|g"
+
+      # Apply infrastructure / shared resources first, then per-service workloads
+      - name: Apply namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Apply Postgres manifests
+        run: kubectl apply -f k8s/postgres/
+
+      - name: Apply Redis manifests
+        run: kubectl apply -f k8s/redis/
+
+      - name: Apply ConfigMap
+        run: kubectl apply -f k8s/configmap.yaml
+
+      - name: Apply Secrets
+        run: kubectl apply -f k8s/secrets.yaml
+
+      - name: Apply bff manifests
+        run: kubectl apply -f k8s/bff/
+
+      - name: Apply scanner manifests
+        run: kubectl apply -f k8s/scanner/
+
+      - name: Apply notifier manifests
+        run: kubectl apply -f k8s/notifier/
+
+      - name: Apply frontend manifests
+        run: kubectl apply -f k8s/frontend/
+
+      - name: Apply ingress
+        run: kubectl apply -f k8s/ingress.yaml
+
+      # Block until each Deployment reports all replicas healthy (or timeout)
+      - name: Wait — shadowaudit-bff rollout
+        run: kubectl rollout status deployment/shadowaudit-bff -n vulnwatch --timeout=120s
+
+      - name: Wait — shadowaudit-scanner rollout
+        run: kubectl rollout status deployment/shadowaudit-scanner -n vulnwatch --timeout=120s
+
+      - name: Wait — shadowaudit-notifier rollout
+        run: kubectl rollout status deployment/shadowaudit-notifier -n vulnwatch --timeout=120s
+
+      - name: Wait — shadowaudit-frontend rollout
+        run: kubectl rollout status deployment/shadowaudit-frontend -n vulnwatch --timeout=120s
+
+      - name: Write deployment summary
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
+          ## 🚀 ShadowAudit — Production Deployment Complete
+
+          | Service | Status |
+          |---|---|
+          | shadowaudit-bff | ✅ Rolled out |
+          | shadowaudit-scanner | ✅ Rolled out |
+          | shadowaudit-notifier | ✅ Rolled out |
+          | shadowaudit-frontend | ✅ Rolled out |
+
+          **Image tag (SHA):** `${{ github.sha }}`
+          **Deployed by:** `${{ github.actor }}`
+          **Namespace:** `vulnwatch`
+          EOF
