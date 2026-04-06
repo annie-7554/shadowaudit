@@ -79,6 +79,7 @@ export class TargetsRepository {
       const vulns: Array<{
         cveId: string; packageName: string; installedVersion: string;
         fixedVersion: string | null; severity: string; cvssScore: number | null; description: string;
+        cweIds?: string[];
       }> = JSON.parse(row.vulnerabilities);
 
       return {
@@ -102,6 +103,7 @@ export class TargetsRepository {
           severity: v.severity.toUpperCase() as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN',
           cvssScore: v.cvssScore ?? null,
           description: v.description,
+          cweIds: v.cweIds ?? [],
         })),
       } as unknown as ScanResult;
     });

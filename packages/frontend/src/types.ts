@@ -13,6 +13,7 @@ export interface Vulnerability {
   severity: Severity;
   cvssScore: number | null;
   description: string;
+  cweIds: string[];
 }
 
 export interface Target {

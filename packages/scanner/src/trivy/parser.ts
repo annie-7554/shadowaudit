@@ -43,6 +43,7 @@ export class TrivyParser {
       title: vuln.Title ?? vuln.VulnerabilityID,
       description: vuln.Description ?? '',
       cvssScore,
+      cweIds: vuln.CweIDs ?? [],
     };
   }
 

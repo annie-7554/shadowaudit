@@ -9,6 +9,7 @@ export interface TrivyVulnerability {
   Title?: string;
   Description?: string;
   CVSS?: Record<string, { V3Score?: number; V2Score?: number }>;
+  CweIDs?: string[];
 }
 
 export interface TrivyResult {
@@ -39,6 +40,7 @@ export interface ParsedVulnerability {
   title: string;
   description: string;
   cvssScore: number | null;
+  cweIds: string[];
 }
 
 export interface ScanJobData {

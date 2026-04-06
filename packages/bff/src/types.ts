@@ -29,6 +29,7 @@ export interface Vulnerability {
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
   cvssScore: number | null;
   description: string;
+  cweIds: string[];
 }
 
 export interface ScanResult {
