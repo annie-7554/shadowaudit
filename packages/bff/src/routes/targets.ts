@@ -41,6 +41,46 @@ const createTargetSchema = z.object({
   value: z.string().min(1).max(1024),
 });
 
+/** Detect the canonical Trivy filename from content + original name so any
+ *  filename with the right extension is accepted (e.g. "my-deps.txt" → "requirements.txt").
+ */
+function canonicalName(originalname: string, tmpPath: string): string {
+  const ext = path.extname(originalname).toLowerCase();
+  const base = path.basename(originalname).toLowerCase();
+
+  // Unambiguous extensions
+  if (ext === '.txt')  return 'requirements.txt';
+  if (ext === '.xml')  return 'pom.xml';
+  if (ext === '.sum')  return 'go.sum';
+  if (ext === '.mod')  return 'go.mod';
+  if (ext === '.toml') return 'Cargo.toml';
+  if (ext === '.gradle' || ext === '.kts') return 'build.gradle';
+
+  // Detect .json — could be package.json or composer.json
+  if (ext === '.json') {
+    try {
+      const content = fs.readFileSync(tmpPath, 'utf8');
+      if (content.includes('"require"') && content.includes('"packages"')) return 'composer.json';
+    } catch {}
+    return 'package.json';
+  }
+
+  // Detect .lock — Gemfile.lock, Cargo.lock, package-lock.json, composer.lock
+  if (ext === '.lock' || base === 'gemfile.lock' || base === 'cargo.lock') {
+    try {
+      const content = fs.readFileSync(tmpPath, 'utf8');
+      if (content.trimStart().startsWith('GEM')) return 'Gemfile.lock';
+      if (content.includes('[[package]]') && content.includes('checksum')) return 'Cargo.lock';
+      if (content.includes('"lockfileVersion"') || content.includes('"node_modules"')) return 'package-lock.json';
+      if (content.includes('"packages":') || content.includes('"require":')) return 'composer.lock';
+    } catch {}
+    return 'package-lock.json';
+  }
+
+  // No extension exact names (Gemfile, Pipfile, etc.)
+  return originalname;
+}
+
 // Upload dependency file(s) to scan the user's own project
 router.post(
   '/upload',
@@ -53,11 +93,12 @@ router.post(
       const firstName = files[0].originalname;
       const name = (req.body.name as string)?.trim() || path.basename(firstName, path.extname(firstName));
 
-      // Save all uploaded files — scanner will handle lock file generation
+      // Save all uploaded files with canonical Trivy-recognised names
       const destDir = `/tmp/shadowaudit-projects/${Date.now()}`;
       fs.mkdirSync(destDir, { recursive: true });
       for (const file of files) {
-        fs.copyFileSync(file.path, path.join(destDir, file.originalname));
+        const canonical = canonicalName(file.originalname, file.path);
+        fs.copyFileSync(file.path, path.join(destDir, canonical));
         fs.unlinkSync(file.path);
       }
 
