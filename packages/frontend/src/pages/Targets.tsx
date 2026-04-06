@@ -76,7 +76,7 @@ const ScanHistoryModal: React.FC<ScanHistoryModalProps> = ({ target, onClose }) 
                     <span
                       key={s}
                       style={{
-                        padding: '2px 10px', borderRadius: '0', fontSize: '0.68rem', fontWeight: 700,
+                        padding: '2px 10px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                         background: { critical: '#ff333315', high: '#ff8c0015', medium: '#ffcc0015', low: '#39ff1415' }[s],
                         color: { critical: '#ff3333', high: '#ff8c00', medium: '#ffcc00', low: '#39ff14' }[s],
                         border: `1px solid ${{ critical: '#ff333333', high: '#ff8c0033', medium: '#ffcc0033', low: '#39ff1433' }[s]}`,
@@ -87,6 +87,31 @@ const ScanHistoryModal: React.FC<ScanHistoryModalProps> = ({ target, onClose }) 
                     </span>
                   ))}
                 </div>
+
+                {/* CLI fix hint */}
+                {selectedScan.vulnerabilities.some((v) => v.fixedVersion) && (
+                  <div style={{
+                    background: '#0e1a0e', border: '1px solid #30d15830', borderRadius: '8px',
+                    padding: '12px 16px', marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>💡</span>
+                    <div>
+                      <p style={{ color: '#30d158', fontWeight: 600, fontSize: '0.82rem', margin: '0 0 4px' }}>
+                        {selectedScan.vulnerabilities.filter((v) => v.fixedVersion).length} vulnerabilit{selectedScan.vulnerabilities.filter((v) => v.fixedVersion).length > 1 ? 'ies have' : 'y has'} a fix available
+                      </p>
+                      <p style={{ color: '#666', fontSize: '0.75rem', margin: 0 }}>
+                        Auto-fix with the ShadowAudit CLI:{' '}
+                        <code style={{
+                          fontFamily: "'JetBrains Mono', monospace", fontSize: '0.75rem',
+                          color: '#d4ff00', background: '#d4ff0010', padding: '1px 6px', borderRadius: '4px',
+                        }}>
+                          shadowaudit fix {target.name} --pkg ./package.json
+                        </code>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <VulnerabilityTable vulnerabilities={selectedScan.vulnerabilities} />
               </>
             )}
