@@ -35,8 +35,11 @@ export async function uploadPackageFile(name: string, files: File | File[]): Pro
   for (const file of fileList) {
     form.append('packageFile', file);
   }
-  // Use direct BFF URL for upload to avoid Vite proxy issues with multipart
-  const res = await fetch('http://localhost:3000/api/targets/upload', {
+  // Use relative URL so it works both in dev (Vite proxy) and Docker (nginx proxy)
+  const uploadUrl = window.location.hostname === 'localhost' && window.location.port === '5173'
+    ? 'http://localhost:3000/api/targets/upload'   // Vite dev: proxy doesn't handle multipart
+    : '/api/targets/upload';                        // Docker/prod: nginx proxies /api → bff
+  const res = await fetch(uploadUrl, {
     method: 'POST',
     body: form,
   });
