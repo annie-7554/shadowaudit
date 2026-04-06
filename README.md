@@ -218,8 +218,8 @@ npm install
 cp .env.example .env
 # Edit .env if your PostgreSQL/Redis settings differ from the defaults
 
-# 8. Run database migrations
-cd packages/bff && npx ts-node src/db/migrate.ts && cd ../..
+# 8. Run database schema
+psql -U shadowaudit -d shadowaudit -f db/001_init.sql 2>/dev/null || echo "Schema already applied, skipping"
 
 # 9. Build the CLI
 cd packages/cli && npm run build && cd ../..
