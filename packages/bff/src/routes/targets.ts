@@ -62,7 +62,7 @@ router.post(
       // Save uploaded file — scanner will generate lock file before scanning
       const destDir = `/tmp/shadowaudit-projects/${Date.now()}`;
       fs.mkdirSync(destDir, { recursive: true });
-      fs.copyFileSync(req.file.path, path.join(destDir, 'package.json'));
+      fs.copyFileSync(req.file.path, path.join(destDir, req.file.originalname));
       fs.unlinkSync(req.file.path);
 
       const target = await targetsRepository.create({
