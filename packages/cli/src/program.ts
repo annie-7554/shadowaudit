@@ -1,6 +1,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
+import fs from 'fs';
+import path from 'path';
 import { listTargets, createTarget, deleteTarget, getScanHistory } from './api';
 import { statusLabel, printVulnTable } from './display';
 import { fixVulnerabilities } from './fix';
@@ -128,9 +130,9 @@ program
 // ── fix ───────────────────────────────────────────────────────────────
 program
   .command('fix <name>')
-  .description('Auto-fix vulnerabilities by bumping versions in package.json')
-  .option('--pkg <path>', 'Path to your package.json', './package.json')
-  .action(async (name: string, opts: { pkg: string }) => {
+  .description('Auto-fix vulnerabilities (Node, Python, Go, Java)')
+  .option('--pkg <path>', 'Path to dependency file (package.json, requirements.txt, go.mod, pom.xml)')
+  .action(async (name: string, opts: { pkg?: string }) => {
     const spinner = ora(`Fetching vulnerabilities for ${chalk.cyan(name)}…`).start();
     try {
       const targets = await listTargets();
@@ -155,17 +157,31 @@ program
         return;
       }
 
-      spinner.succeed(`Found ${chalk.yellow(fixable.length)} fixable vulnerabilit${fixable.length > 1 ? 'ies' : 'y'}:`);
-      console.log();
+      // Auto-detect file to fix based on scan directory contents
+      let pkgFile = opts.pkg;
+      if (!pkgFile && target.type === 'filesystem' && fs.existsSync(target.value)) {
+        const files = fs.readdirSync(target.value);
+        const priority = ['package.json', 'requirements.txt', 'pom.xml', 'go.mod', 'Gemfile', 'Cargo.toml', 'composer.json'];
+        const found = priority.find((f) => files.includes(f));
+        if (found) pkgFile = path.join(target.value, found);
+      }
 
-      const { fixed, skipped } = await fixVulnerabilities(latest.vulnerabilities, opts.pkg);
+      if (!pkgFile) {
+        spinner.fail(chalk.red('Could not detect dependency file. Use --pkg <path> to specify it.'));
+        process.exit(1);
+      }
+
+      spinner.succeed(`Found ${chalk.yellow(fixable.length)} fixable vulnerabilit${fixable.length > 1 ? 'ies' : 'y'}:`);
+      console.log(chalk.gray(`  Fixing: ${pkgFile}\n`));
+
+      const { fixed, skipped } = await fixVulnerabilities(latest.vulnerabilities, pkgFile);
 
       console.log();
       if (fixed > 0) {
-        console.log(chalk.green.bold(`  ✔ Fixed ${fixed} package${fixed > 1 ? 's' : ''} in ${opts.pkg}`));
+        console.log(chalk.green.bold(`  ✔ Fixed ${fixed} package${fixed > 1 ? 's' : ''} in ${pkgFile}`));
       }
       if (skipped > 0) {
-        console.log(chalk.gray(`  ⚠ ${skipped} vulnerabilit${skipped > 1 ? 'ies' : 'y'} skipped (not found in package.json or no fix available)`));
+        console.log(chalk.gray(`  ⚠ ${skipped} vulnerabilit${skipped > 1 ? 'ies' : 'y'} skipped (transitive or no fix available)`));
       }
       console.log();
       console.log(chalk.gray(`  Re-scan to confirm: ${chalk.white('shadowaudit scan ' + target.value)}\n`));
