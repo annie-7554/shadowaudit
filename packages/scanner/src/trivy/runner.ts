@@ -1,5 +1,8 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import type { TrivyRawOutput, ScanJobData } from '../types';
 import { TrivyParser } from './parser';
 import type { ParsedVulnerability } from '../types';
@@ -38,24 +41,56 @@ export class TrivyRunner {
     type: ScanJobData['type'],
     value: string,
   ): Promise<TrivyRawOutput> {
-    const args =
-      type === 'docker'
-        ? ['image', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value]
-        : ['fs', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value];
+    if (type === 'docker') {
+      const args = ['image', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value];
+      return TrivyRunner.execute(args);
+    }
 
+    if (type === 'npm') {
+      return TrivyRunner.runNpmScan(value);
+    }
+
+    // filesystem scan
+    const args = ['fs', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value];
     return TrivyRunner.execute(args);
   }
 
+  // For npm packages: create a temp dir with package.json, npm install, then scan
+  private static async runNpmScan(packageSpec: string): Promise<TrivyRawOutput> {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shadowaudit-npm-'));
+    try {
+      // Parse "name@version" or just "name"
+      const atIdx = packageSpec.lastIndexOf('@');
+      const pkgName = atIdx > 0 ? packageSpec.slice(0, atIdx) : packageSpec;
+      const pkgVersion = atIdx > 0 ? packageSpec.slice(atIdx + 1) : 'latest';
+
+      const packageJson = {
+        name: 'shadowaudit-scan-target',
+        version: '1.0.0',
+        dependencies: { [pkgName]: pkgVersion },
+      };
+      fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify(packageJson, null, 2));
+
+      // npm install --package-lock-only is faster (no actual download, just resolves)
+      await execFileAsync('npm', ['install', '--package-lock-only', '--no-audit'], {
+        cwd: tmpDir,
+        timeout: 60_000,
+      });
+
+      const args = ['fs', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', tmpDir];
+      const result = await TrivyRunner.execute(args);
+      return result;
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
   private static async runConfigScan(): Promise<TrivyRawOutput> {
-    // Only run if k8s directory exists
-    const fs = await import('fs');
     if (!fs.existsSync('./k8s')) return { Results: [] };
     return TrivyRunner.execute(['config', '--format', 'json', '--quiet', './k8s']);
   }
 
   private static async runSecretScan(): Promise<TrivyRawOutput> {
-    // Only run if current directory exists and has files
-    const fs = await import('fs');
     if (!fs.existsSync('.')) return { Results: [] };
     return TrivyRunner.execute(['fs', '--scanners', 'secret', '--format', 'json', '--quiet', '.']);
   }
