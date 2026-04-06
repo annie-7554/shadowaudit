@@ -176,27 +176,37 @@ export const Targets: React.FC = () => {
   };
 
   return (
-    <div>
+    <div style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>
       <h1 className="sa-page-title">Targets</h1>
 
       {/* Register form */}
-      <div className="sa-card" style={{ marginBottom: '24px' }}>
-        <h2 className="sa-section-title">Register New Target</h2>
+      <div style={{
+        background: '#111', border: '1px solid #222', borderRadius: '12px',
+        padding: '24px', marginBottom: '16px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+          <span style={{ fontSize: '1rem' }}>🎯</span>
+          <h2 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+            Register New Target
+          </h2>
+        </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 180px' }}>
-            <label className="sa-label">Name</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '1 1 180px' }}>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Name</label>
             <input
               className="sa-input"
+              style={{ borderRadius: '8px', fontSize: '0.88rem' }}
               type="text"
               placeholder="my-service"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '0 0 160px' }}>
-            <label className="sa-label">Type</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '0 0 160px' }}>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Type</label>
             <select
               className="sa-input"
+              style={{ borderRadius: '8px', fontSize: '0.88rem' }}
               value={form.type}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as TargetType }))}
             >
@@ -205,10 +215,11 @@ export const Targets: React.FC = () => {
               ))}
             </select>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '2 1 240px' }}>
-            <label className="sa-label">Value</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '2 1 240px' }}>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Value</label>
             <input
               className="sa-input"
+              style={{ borderRadius: '8px', fontSize: '0.88rem', fontFamily: "'JetBrains Mono', monospace" }}
               type="text"
               placeholder="lodash@4.17.20 or nginx:latest"
               value={form.value}
@@ -219,39 +230,49 @@ export const Targets: React.FC = () => {
             type="submit"
             className="sa-btn-primary"
             disabled={submitting}
-            style={{ flex: '0 0 auto' }}
+            style={{ flex: '0 0 auto', borderRadius: '8px', padding: '10px 22px' }}
           >
             {submitting ? 'Registering…' : '+ Register'}
           </button>
         </form>
-        {formError && <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '0.85rem' }}>⚠️ {formError}</p>}
+        {formError && <p style={{ color: '#ff4d4d', marginTop: '10px', fontSize: '0.82rem' }}>⚠️ {formError}</p>}
       </div>
 
       {/* Upload your own package.json */}
-      <div className="sa-card" style={{ marginBottom: '24px', borderColor: '#d4ff0033' }}>
-        <h2 className="sa-section-title">📂 Scan Your Own Project</h2>
-        <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '12px' }}>
-          Upload your <code style={{ color: '#d4ff00' }}>package.json</code> or <code style={{ color: '#d4ff00' }}>package-lock.json</code> to scan your own project's dependencies for CVEs.
+      <div style={{
+        background: '#111', border: '1px solid #d4ff0022', borderRadius: '12px',
+        padding: '24px', marginBottom: '24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+          <span style={{ fontSize: '1rem' }}>📂</span>
+          <h2 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+            Scan Your Own Project
+          </h2>
+        </div>
+        <p style={{ color: '#666', fontSize: '0.82rem', marginBottom: '16px' }}>
+          Upload your <code style={{ color: '#d4ff00', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem' }}>package.json</code> or{' '}
+          <code style={{ color: '#d4ff00', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem' }}>package-lock.json</code> to scan dependencies for CVEs.
         </p>
         <form onSubmit={handleUpload} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 180px' }}>
-            <label className="sa-label">Project Name</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '1 1 180px' }}>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Project Name</label>
             <input
               className="sa-input"
+              style={{ borderRadius: '8px', fontSize: '0.88rem' }}
               type="text"
               placeholder="my-project"
               value={uploadName}
               onChange={(e) => setUploadName(e.target.value)}
             />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '2 1 240px' }}>
-            <label className="sa-label">package.json / package-lock.json</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '2 1 240px' }}>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>package.json / package-lock.json</label>
             <input
               ref={fileInputRef}
               className="sa-input"
+              style={{ borderRadius: '8px', paddingTop: '7px', fontSize: '0.82rem' }}
               type="file"
               accept=".json,.lock"
-              style={{ paddingTop: '6px' }}
               onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
             />
           </div>
@@ -259,78 +280,116 @@ export const Targets: React.FC = () => {
             type="submit"
             className="sa-btn-primary"
             disabled={uploading || !uploadFile}
-            style={{ flex: '0 0 auto' }}
+            style={{ flex: '0 0 auto', borderRadius: '8px', padding: '10px 22px' }}
           >
             {uploading ? 'Scanning…' : '⬆ Upload & Scan'}
           </button>
         </form>
-        {uploadError && <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '0.85rem' }}>⚠️ {uploadError}</p>}
+        {uploadError && <p style={{ color: '#ff4d4d', marginTop: '10px', fontSize: '0.82rem' }}>⚠️ {uploadError}</p>}
       </div>
 
       {/* Targets table */}
-      <div className="sa-card">
-        <h2 className="sa-section-title">Registered Targets</h2>
-        {loading && <p style={{ color: '#94a3b8' }}>Loading targets…</p>}
-        {error && <p style={{ color: '#ef4444' }}>⚠️ {error}</p>}
+      <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #1e1e1e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1rem' }}>🛡</span>
+            <h2 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+              Registered Targets
+            </h2>
+          </div>
+          <span style={{ fontSize: '0.72rem', color: '#555', fontWeight: 500 }}>
+            {targets.length} target{targets.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {loading && <p style={{ color: '#555', padding: '32px 24px', textAlign: 'center', fontSize: '0.85rem' }}>Loading targets…</p>}
+        {error && <p style={{ color: '#ff4d4d', padding: '20px 24px', fontSize: '0.85rem' }}>⚠️ {error}</p>}
         {!loading && !error && targets.length === 0 && (
-          <p style={{ color: '#94a3b8', textAlign: 'center', padding: '24px 0' }}>
-            No targets registered yet. Add one above.
-          </p>
+          <div style={{ textAlign: 'center', padding: '48px 24px', color: '#444' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎯</div>
+            <p style={{ fontSize: '0.88rem', fontWeight: 500 }}>No targets yet</p>
+            <p style={{ fontSize: '0.78rem', marginTop: '4px', color: '#333' }}>Register a package or upload a project above</p>
+          </div>
         )}
         {targets.length > 0 && (
           <div style={{ overflowX: 'auto' }}>
-            <table className="sa-table">
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Inter, sans-serif', fontSize: '0.83rem' }}>
               <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Value</th>
-                  <th>Last Scan</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                <tr style={{ background: '#0e0e0e' }}>
+                  {['Name', 'Type', 'Value', 'Last Scan', 'Status', 'Actions'].map((h) => (
+                    <th key={h} style={{
+                      textAlign: 'left', padding: '11px 20px',
+                      fontSize: '0.65rem', fontWeight: 700, color: '#555',
+                      textTransform: 'uppercase', letterSpacing: '0.1em',
+                      borderBottom: '1px solid #1e1e1e', whiteSpace: 'nowrap',
+                    }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {targets.map((target) => (
+                {targets.map((target, i) => (
                   <tr
                     key={target.id}
-                    style={{ cursor: 'pointer' }}
+                    style={{
+                      borderBottom: i < targets.length - 1 ? '1px solid #1a1a1a' : 'none',
+                      cursor: 'pointer', transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#151515')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     onClick={() => setSelectedTarget(target)}
                   >
-                    <td style={{ fontWeight: 600 }}>{target.name}</td>
-                    <td>
-                    <span style={{
-                        padding: '2px 7px', borderRadius: '0', fontSize: '0.65rem',
-                        background: '#1a1a1a', color: '#666', border: '1px solid #2a2a2a',
-                        textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700,
+                    <td style={{ padding: '14px 20px', fontWeight: 600, color: '#e5e5e5' }}>
+                      {target.name}
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      <span style={{
+                        padding: '3px 8px', borderRadius: '6px', fontSize: '0.65rem',
+                        fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+                        background: target.type === 'npm' ? '#d4ff0012' : target.type === 'docker' ? '#60a5fa12' : '#a78bfa12',
+                        color: target.type === 'npm' ? '#d4ff00' : target.type === 'docker' ? '#60a5fa' : '#a78bfa',
+                        border: `1px solid ${target.type === 'npm' ? '#d4ff0030' : target.type === 'docker' ? '#60a5fa30' : '#a78bfa30'}`,
                       }}>
                         {target.type}
                       </span>
                     </td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: '#94a3b8' }}>
+                    <td style={{ padding: '14px 20px', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem', color: '#888', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {target.value}
                     </td>
-                    <td style={{ fontSize: '0.82rem', color: '#999' }}>
-                      {target.lastScannedAt ? new Date(target.lastScannedAt).toLocaleString() : '—'}
+                    <td style={{ padding: '14px 20px', fontSize: '0.78rem', color: '#666', whiteSpace: 'nowrap' }}>
+                      {target.lastScannedAt ? new Date(target.lastScannedAt).toLocaleString() : <span style={{ color: '#444' }}>Never</span>}
                     </td>
-                    <td>
-                      <span title="Click row to view CVE details">
-                        <ScanStatus status={target.status} />
-                      </span>
+                    <td style={{ padding: '14px 20px' }}>
+                      <ScanStatus status={target.status} />
                     </td>
-                    <td style={{ fontSize: '0.75rem', color: '#d4ff00' }} onClick={(e) => e.stopPropagation()}>
-                      <span
-                        style={{ cursor: 'pointer', textDecoration: 'underline', marginRight: '10px' }}
-                        onClick={() => setSelectedTarget(target)}
-                      >
-                        View CVEs
-                      </span>
-                      <button
-                        className="sa-btn-danger"
-                        onClick={() => handleDelete(target)}
-                      >
-                        Delete
-                      </button>
+                    <td style={{ padding: '14px 20px' }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          onClick={() => setSelectedTarget(target)}
+                          style={{
+                            padding: '5px 12px', borderRadius: '6px', fontSize: '0.72rem',
+                            fontWeight: 600, cursor: 'pointer', border: '1px solid #60a5fa40',
+                            background: '#60a5fa10', color: '#60a5fa',
+                            transition: 'background 0.15s', fontFamily: 'Inter, sans-serif',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#60a5fa20')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '#60a5fa10')}
+                        >
+                          View CVEs
+                        </button>
+                        <button
+                          onClick={() => handleDelete(target)}
+                          style={{
+                            padding: '5px 10px', borderRadius: '6px', fontSize: '0.72rem',
+                            fontWeight: 600, cursor: 'pointer', border: '1px solid #ff4d4d30',
+                            background: 'transparent', color: '#ff4d4d',
+                            transition: 'background 0.15s', fontFamily: 'Inter, sans-serif',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#ff4d4d15')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
