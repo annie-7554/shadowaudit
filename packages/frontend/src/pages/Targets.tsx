@@ -274,10 +274,27 @@ export const Targets: React.FC = () => {
             Scan Your Own Project
           </h2>
         </div>
-        <p style={{ color: '#666', fontSize: '0.82rem', marginBottom: '16px' }}>
-          Upload your <code style={{ color: '#d4ff00', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem' }}>package.json</code> or{' '}
-          <code style={{ color: '#d4ff00', fontFamily: "'JetBrains Mono', monospace", fontSize: '0.8rem' }}>package-lock.json</code> to scan dependencies for CVEs.
+        <p style={{ color: '#666', fontSize: '0.82rem', marginBottom: '10px' }}>
+          Upload a dependency file to scan for CVEs. Supports:
         </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+          {[
+            { label: 'package.json', color: '#30d158' },
+            { label: 'requirements.txt', color: '#60a5fa' },
+            { label: 'go.sum', color: '#34d399' },
+            { label: 'pom.xml', color: '#f97316' },
+            { label: 'Gemfile.lock', color: '#f43f5e' },
+            { label: 'Cargo.lock', color: '#fb923c' },
+            { label: 'composer.lock', color: '#a78bfa' },
+            { label: 'yarn.lock', color: '#30d158' },
+          ].map(({ label, color }) => (
+            <code key={label} style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: '0.72rem',
+              color, background: `${color}14`, border: `1px solid ${color}30`,
+              padding: '2px 8px', borderRadius: '5px',
+            }}>{label}</code>
+          ))}
+        </div>
         <form onSubmit={handleUpload} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '1 1 180px' }}>
             <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Project Name</label>
@@ -291,13 +308,13 @@ export const Targets: React.FC = () => {
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '2 1 240px' }}>
-            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>package.json / package-lock.json</label>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dependency File</label>
             <input
               ref={fileInputRef}
               className="sa-input"
               style={{ borderRadius: '8px', paddingTop: '7px', fontSize: '0.82rem' }}
               type="file"
-              accept=".json,.lock"
+              accept=".json,.lock,.txt,.xml,.gradle,.toml,.sum,.mod"
               onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
             />
           </div>

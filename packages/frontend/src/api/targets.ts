@@ -32,10 +32,14 @@ export async function uploadPackageFile(name: string, file: File): Promise<Targe
   const form = new FormData();
   form.append('name', name);
   form.append('packageFile', file);
-  const { data } = await client.post<Target>('/targets/upload', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  // Use direct BFF URL for upload to avoid Vite proxy issues with multipart
+  const res = await fetch('http://localhost:3000/api/targets/upload', {
+    method: 'POST',
+    body: form,
   });
-  return data;
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  const json = await res.json();
+  return json.data ?? json;
 }
 
 export async function getScanHistory(id: string): Promise<ScanResult[]> {

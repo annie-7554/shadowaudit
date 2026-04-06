@@ -50,7 +50,19 @@ export class TrivyRunner {
       return TrivyRunner.runNpmScan(value);
     }
 
-    // filesystem scan
+    // filesystem scan — if it has package.json but no lock file, generate one first
+    const pkgJson = path.join(value, 'package.json');
+    const lockFile = path.join(value, 'package-lock.json');
+    if (fs.existsSync(pkgJson) && !fs.existsSync(lockFile)) {
+      try {
+        await execFileAsync('npm', ['install', '--package-lock-only', '--no-audit'], {
+          cwd: value, timeout: 60_000,
+        });
+      } catch {
+        // scan anyway
+      }
+    }
+
     const args = ['fs', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value];
     return TrivyRunner.execute(args);
   }

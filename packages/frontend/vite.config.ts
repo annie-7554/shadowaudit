@@ -10,6 +10,9 @@ export default defineConfig({
         target: 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
+        configure: (proxy) => {
+          proxy.on('error', (err) => console.error('[proxy error]', err));
+        },
       },
     },
   },

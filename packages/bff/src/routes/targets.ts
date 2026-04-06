@@ -3,23 +3,43 @@ import { z } from 'zod';
 import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { validate } from '../middleware/validate';
 import { targetsRepository } from '../db/targets';
 import { addScanJob } from '../queue/producer';
 import { AppError } from '../middleware/errorHandler';
 import type { ApiResponse, Target, ScanResult } from '../types';
 
+const execFileAsync = promisify(execFile);
+
 const router = Router();
+
+const ALLOWED_FILES = new Set([
+  // Node.js
+  'package.json', 'package-lock.json', 'yarn.lock',
+  // Python
+  'requirements.txt', 'Pipfile.lock', 'Pipfile',
+  // Go
+  'go.sum', 'go.mod',
+  // Java
+  'pom.xml', 'build.gradle', 'build.gradle.kts',
+  // Ruby
+  'Gemfile.lock', 'Gemfile',
+  // PHP
+  'composer.lock', 'composer.json',
+  // Rust
+  'Cargo.lock', 'Cargo.toml',
+]);
 
 const upload = multer({
   dest: '/tmp/shadowaudit-uploads/',
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
   fileFilter: (_req, file, cb) => {
-    const allowed = ['package.json', 'package-lock.json', 'yarn.lock'];
-    if (allowed.includes(file.originalname)) {
+    if (ALLOWED_FILES.has(file.originalname)) {
       cb(null, true);
     } else {
-      cb(new Error('Only package.json, package-lock.json, or yarn.lock allowed'));
+      cb(new Error(`Unsupported file. Allowed: ${[...ALLOWED_FILES].join(', ')}`));
     }
   },
 });
@@ -39,12 +59,11 @@ router.post(
       if (!req.file) throw new AppError(400, 'No file uploaded');
       const name = (req.body.name as string)?.trim() || path.basename(req.file.originalname, '.json');
 
-      // Save uploaded file to a stable location the scanner can read
+      // Save uploaded file — scanner will generate lock file before scanning
       const destDir = `/tmp/shadowaudit-projects/${Date.now()}`;
       fs.mkdirSync(destDir, { recursive: true });
-      const destFile = path.join(destDir, req.file.originalname);
-      fs.copyFileSync(req.file.path, destFile);
-      fs.unlinkSync(req.file.path); // remove temp upload
+      fs.copyFileSync(req.file.path, path.join(destDir, 'package.json'));
+      fs.unlinkSync(req.file.path);
 
       const target = await targetsRepository.create({
         name,
