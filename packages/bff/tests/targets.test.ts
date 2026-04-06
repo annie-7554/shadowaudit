@@ -25,8 +25,9 @@ const sampleTarget = {
   name: 'my-app',
   type: 'npm' as const,
   value: 'my-app@1.0.0',
-  created_at: new Date('2024-01-01'),
-  updated_at: new Date('2024-01-01'),
+  status: 'never_scanned' as const,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  lastScannedAt: null,
 };
 
 beforeEach(() => {
