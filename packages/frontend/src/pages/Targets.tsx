@@ -245,13 +245,21 @@ export const Targets: React.FC = () => {
                     <td style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: '#94a3b8' }}>
                       {target.value}
                     </td>
-                    <td style={{ fontSize: '0.82rem', color: '#555' }}>
+                    <td style={{ fontSize: '0.82rem', color: '#999' }}>
                       {target.lastScannedAt ? new Date(target.lastScannedAt).toLocaleString() : '—'}
                     </td>
                     <td>
-                      <ScanStatus status={target.status} />
+                      <span title="Click row to view CVE details">
+                        <ScanStatus status={target.status} />
+                      </span>
                     </td>
-                    <td onClick={(e) => e.stopPropagation()}>
+                    <td style={{ fontSize: '0.75rem', color: '#d4ff00' }} onClick={(e) => e.stopPropagation()}>
+                      <span
+                        style={{ cursor: 'pointer', textDecoration: 'underline', marginRight: '10px' }}
+                        onClick={() => setSelectedTarget(target)}
+                      >
+                        View CVEs
+                      </span>
                       <button
                         className="sa-btn-danger"
                         onClick={() => handleDelete(target)}
