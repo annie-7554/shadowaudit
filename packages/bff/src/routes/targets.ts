@@ -50,20 +50,25 @@ const createTargetSchema = z.object({
   value: z.string().min(1).max(1024),
 });
 
-// Upload a package.json to scan the user's own project
+// Upload dependency file(s) to scan the user's own project
 router.post(
   '/upload',
-  upload.single('packageFile'),
+  upload.array('packageFile', 2),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.file) throw new AppError(400, 'No file uploaded');
-      const name = (req.body.name as string)?.trim() || path.basename(req.file.originalname, '.json');
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) throw new AppError(400, 'No file uploaded');
 
-      // Save uploaded file — scanner will generate lock file before scanning
+      const firstName = files[0].originalname;
+      const name = (req.body.name as string)?.trim() || path.basename(firstName, path.extname(firstName));
+
+      // Save all uploaded files — scanner will handle lock file generation
       const destDir = `/tmp/shadowaudit-projects/${Date.now()}`;
       fs.mkdirSync(destDir, { recursive: true });
-      fs.copyFileSync(req.file.path, path.join(destDir, req.file.originalname));
-      fs.unlinkSync(req.file.path);
+      for (const file of files) {
+        fs.copyFileSync(file.path, path.join(destDir, file.originalname));
+        fs.unlinkSync(file.path);
+      }
 
       const target = await targetsRepository.create({
         name,

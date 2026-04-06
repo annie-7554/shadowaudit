@@ -133,7 +133,7 @@ export const Targets: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [uploadName, setUploadName] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,14 +183,14 @@ export const Targets: React.FC = () => {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadFile) { setUploadError('Please select a file.'); return; }
-    const name = uploadName.trim() || uploadFile.name.replace('.json', '');
+    if (uploadFiles.length === 0) { setUploadError('Please select a file.'); return; }
+    const name = uploadName.trim() || uploadFiles[0].name.replace(/\.[^.]+$/, '');
     setUploading(true);
     setUploadError(null);
     try {
-      await uploadPackageFile(name, uploadFile);
+      await uploadPackageFile(name, uploadFiles);
       setUploadName('');
-      setUploadFile(null);
+      setUploadFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
       await fetchTargets();
     } catch {
@@ -308,20 +308,32 @@ export const Targets: React.FC = () => {
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '2 1 240px' }}>
-            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dependency File</label>
+            <label style={{ fontSize: '0.68rem', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Dependency File(s) <span style={{ color: '#555', fontWeight: 400, textTransform: 'none' }}>(select multiple for Go: go.sum + go.mod)</span>
+            </label>
             <input
               ref={fileInputRef}
               className="sa-input"
               style={{ borderRadius: '8px', paddingTop: '7px', fontSize: '0.82rem' }}
               type="file"
               accept=".json,.lock,.txt,.xml,.gradle,.toml,.sum,.mod"
-              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+              multiple
+              onChange={(e) => setUploadFiles(Array.from(e.target.files ?? []))}
             />
+            {uploadFiles.length > 0 && (
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {uploadFiles.map(f => (
+                  <span key={f.name} style={{ fontSize: '0.7rem', color: '#30d158', background: '#30d15815', border: '1px solid #30d15830', padding: '1px 7px', borderRadius: '4px', fontFamily: "'JetBrains Mono', monospace" }}>
+                    {f.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <button
             type="submit"
             className="sa-btn-primary"
-            disabled={uploading || !uploadFile}
+            disabled={uploading || uploadFiles.length === 0}
             style={{ flex: '0 0 auto', borderRadius: '8px', padding: '10px 22px' }}
           >
             {uploading ? 'Scanning…' : '⬆ Upload & Scan'}

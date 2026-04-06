@@ -28,10 +28,13 @@ export async function deleteTarget(id: string): Promise<void> {
   await client.delete(`/targets/${id}`);
 }
 
-export async function uploadPackageFile(name: string, file: File): Promise<Target> {
+export async function uploadPackageFile(name: string, files: File | File[]): Promise<Target> {
   const form = new FormData();
   form.append('name', name);
-  form.append('packageFile', file);
+  const fileList = Array.isArray(files) ? files : [files];
+  for (const file of fileList) {
+    form.append('packageFile', file);
+  }
   // Use direct BFF URL for upload to avoid Vite proxy issues with multipart
   const res = await fetch('http://localhost:3000/api/targets/upload', {
     method: 'POST',
