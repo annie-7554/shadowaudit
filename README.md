@@ -307,6 +307,8 @@ Open `http://localhost:5173` in your browser.
 
 ### Option B — Docker Compose
 
+> Requires Docker Desktop to be **installed and running** before proceeding. Open Docker Desktop and wait for the whale icon in the menu bar to show "Docker Desktop is running".
+
 ```bash
 docker-compose up
 ```
