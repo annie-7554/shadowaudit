@@ -202,9 +202,9 @@ brew install node postgresql@15 redis trivy
 brew services start postgresql@15
 brew services start redis
 
-# 4. Create the database
-createdb shadowaudit
-psql shadowaudit -c "CREATE USER shadowaudit WITH PASSWORD 'shadowaudit';"
+# 4. Create the database (skip if it already exists)
+createdb shadowaudit 2>/dev/null || echo "Database already exists, skipping"
+psql shadowaudit -c "CREATE USER shadowaudit WITH PASSWORD 'shadowaudit';" 2>/dev/null || echo "User already exists, skipping"
 psql shadowaudit -c "GRANT ALL PRIVILEGES ON DATABASE shadowaudit TO shadowaudit;"
 
 # 5. Clone the repository
