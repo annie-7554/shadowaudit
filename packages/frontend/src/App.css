@@ -17,9 +17,9 @@
   --surface2:  #1a1a1a;
   --border:    #2a2a2a;
   --border2:   #333333;
-  --text:      #f0f0f0;
-  --text-muted:#aaaaaa;
-  --text-dim:  #777777;
+  --text:      #ffffff;
+  --text-muted:#cccccc;
+  --text-dim:  #999999;
   --accent:    #d4ff00;      /* sharp lime/yellow — no blue */
   --critical:  #ff3333;
   --high:      #ff8c00;
