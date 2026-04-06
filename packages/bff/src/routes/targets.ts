@@ -15,31 +15,22 @@ const execFileAsync = promisify(execFile);
 
 const router = Router();
 
-const ALLOWED_FILES = new Set([
-  // Node.js
-  'package.json', 'package-lock.json', 'yarn.lock',
-  // Python
-  'requirements.txt', 'Pipfile.lock', 'Pipfile',
-  // Go
-  'go.sum', 'go.mod',
-  // Java
-  'pom.xml', 'build.gradle', 'build.gradle.kts',
-  // Ruby
-  'Gemfile.lock', 'Gemfile',
-  // PHP
-  'composer.lock', 'composer.json',
-  // Rust
-  'Cargo.lock', 'Cargo.toml',
+const ALLOWED_EXTENSIONS = new Set([
+  '.json', '.lock', '.txt', '.xml', '.gradle', '.kts', '.toml', '.sum', '.mod',
 ]);
+
+// Also allow exact filenames with no extension (Gemfile, Pipfile, Cargo.toml etc.)
+const ALLOWED_EXACT_NAMES = new Set(['Gemfile', 'Pipfile', 'Dockerfile']);
 
 const upload = multer({
   dest: '/tmp/shadowaudit-uploads/',
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
   fileFilter: (_req, file, cb) => {
-    if (ALLOWED_FILES.has(file.originalname)) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ALLOWED_EXTENSIONS.has(ext) || ALLOWED_EXACT_NAMES.has(file.originalname)) {
       cb(null, true);
     } else {
-      cb(new Error(`Unsupported file. Allowed: ${[...ALLOWED_FILES].join(', ')}`));
+      cb(new Error(`Unsupported file type "${ext}". Allowed extensions: ${[...ALLOWED_EXTENSIONS].join(', ')}`));
     }
   },
 });
