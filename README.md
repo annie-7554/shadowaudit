@@ -88,15 +88,22 @@ shadowaudit fix my-app
 - Add Docker images or npm packages directly from the UI
 
 ### ⌨️ CLI Tool
-A full-featured command-line interface for scripting and CI/CD pipelines:
+A full-featured command-line interface for scripting and CI/CD pipelines.
 
+Set up a one-time shell alias (or use `node packages/cli/dist/index.js` directly):
+```bash
+# From the repo root — set once per terminal session
+CLI="node packages/cli/dist/index.js"
 ```
-shadowaudit list                    # list all scan targets
-shadowaudit scan lodash@4.17.15    # scan an npm package
-shadowaudit scan nginx:1.21 -t docker -n my-nginx
-shadowaudit status my-app           # view CVEs for a target
-shadowaudit fix my-app              # auto-fix dependency versions
-shadowaudit delete my-app           # remove a target
+
+Then:
+```bash
+$CLI list                                      # list all scan targets
+$CLI scan lodash@4.17.15 -t npm -n my-lodash  # scan an npm package
+$CLI scan nginx:1.21 -t docker -n my-nginx    # scan a Docker image
+$CLI status my-lodash                          # view CVEs for a target
+$CLI fix my-lodash                             # auto-fix dependency versions
+$CLI delete my-lodash                          # remove a target
 ```
 
 ### 🔔 Webhook Notifier
