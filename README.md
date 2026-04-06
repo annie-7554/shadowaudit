@@ -90,21 +90,27 @@ shadowaudit fix my-app
 ### ⌨️ CLI Tool
 A full-featured command-line interface for scripting and CI/CD pipelines.
 
-Set up a one-time shell alias (or use `node packages/cli/dist/index.js` directly):
+Set up a shell alias once per terminal session (required — `CLI="node ..."` does **not** work in zsh when the value contains spaces):
 ```bash
-# From the repo root — set once per terminal session
-CLI="node packages/cli/dist/index.js"
+# From the repo root — run once per terminal session
+alias shadowaudit="node packages/cli/dist/index.js"
 ```
 
 Then:
 ```bash
-$CLI list                                      # list all scan targets
-$CLI scan lodash@4.17.15 -t npm -n my-lodash  # scan an npm package
-$CLI scan nginx:1.21 -t docker -n my-nginx    # scan a Docker image
-$CLI status my-lodash                          # view CVEs for a target
-$CLI fix my-lodash                             # auto-fix dependency versions
-$CLI delete my-lodash                          # remove a target
+shadowaudit list                                      # list all scan targets
+shadowaudit scan lodash@4.17.15 -t npm -n my-lodash  # scan an npm package
+shadowaudit scan nginx:1.21 -t docker -n my-nginx    # scan a Docker image
+shadowaudit status my-lodash                          # view CVEs for a target
+shadowaudit fix my-lodash                             # auto-fix dependency versions
+shadowaudit delete my-lodash                          # remove a target
 ```
+
+> **Tip:** To avoid re-running the alias every time, add it permanently:
+> ```bash
+> echo 'alias shadowaudit="node ~/shadowaudit/shadowaudit/packages/cli/dist/index.js"' >> ~/.zshrc
+> source ~/.zshrc
+> ```
 
 ### 🔔 Webhook Notifier
 - Polls for scan result changes after every scan
@@ -376,16 +382,17 @@ The CLI talks to the BFF API. Make sure the BFF is running before using it.
 # Build the CLI (only needed once, or after code changes)
 cd packages/cli && npm run build && cd ../..
 
-# Shorthand alias used in examples below
-CLI="node packages/cli/dist/index.js"
+# Set alias for this terminal session
+# Note: CLI="node ..." does NOT work in zsh — use alias instead
+alias shadowaudit="node packages/cli/dist/index.js"
 ```
 
 ### List all targets
 
 ```bash
-$CLI list
+shadowaudit list
 # or
-$CLI ls
+shadowaudit ls
 ```
 
 ```
@@ -399,27 +406,27 @@ $CLI ls
 ### Scan an npm package
 
 ```bash
-$CLI scan lodash@4.17.15 -t npm -n lodash-check
-$CLI scan minimist@0.2.0 -t npm
+shadowaudit scan lodash@4.17.15 -t npm -n lodash-check
+shadowaudit scan minimist@0.2.0 -t npm
 ```
 
 ### Scan a Docker image
 
 ```bash
-$CLI scan nginx:1.21 -t docker -n nginx-prod
-$CLI scan alpine:3.12 -t docker
+shadowaudit scan nginx:1.21 -t docker -n nginx-prod
+shadowaudit scan alpine:3.12 -t docker
 ```
 
 ### Scan a local filesystem path
 
 ```bash
-$CLI scan /path/to/your/project -t filesystem -n my-app
+shadowaudit scan /path/to/your/project -t filesystem -n my-app
 ```
 
 ### Check scan status / view CVEs
 
 ```bash
-$CLI status lodash-check
+shadowaudit status lodash-check
 ```
 
 ```
@@ -442,13 +449,13 @@ $CLI status lodash-check
 
 ```bash
 # Auto-detects the dependency file from the scan directory
-$CLI fix my-app
+shadowaudit fix my-app
 
 # Or point to a specific file
-$CLI fix my-app --pkg /path/to/package.json
-$CLI fix my-python --pkg /path/to/requirements.txt
-$CLI fix my-java   --pkg /path/to/pom.xml
-$CLI fix my-go     --pkg /path/to/go.mod
+shadowaudit fix my-app --pkg /path/to/package.json
+shadowaudit fix my-python --pkg /path/to/requirements.txt
+shadowaudit fix my-java   --pkg /path/to/pom.xml
+shadowaudit fix my-go     --pkg /path/to/go.mod
 ```
 
 **Before fix:**
@@ -463,17 +470,17 @@ $CLI fix my-go     --pkg /path/to/go.mod
 
 Re-scan the target to confirm:
 ```bash
-$CLI scan /tmp/shadowaudit-projects/123 -t filesystem -n my-app
-$CLI status my-app
+shadowaudit scan /tmp/shadowaudit-projects/123 -t filesystem -n my-app
+shadowaudit status my-app
 # → ✔ Clean
 ```
 
 ### Delete a target
 
 ```bash
-$CLI delete my-app
+shadowaudit delete my-app
 # or
-$CLI rm my-app
+shadowaudit rm my-app
 ```
 
 ---
