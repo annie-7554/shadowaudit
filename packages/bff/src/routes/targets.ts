@@ -1,5 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import multer from 'multer';
+import * as path from 'path';
+import * as fs from 'fs';
 import { validate } from '../middleware/validate';
 import { targetsRepository } from '../db/targets';
 import { addScanJob } from '../queue/producer';
@@ -8,11 +11,55 @@ import type { ApiResponse, Target, ScanResult } from '../types';
 
 const router = Router();
 
+const upload = multer({
+  dest: '/tmp/shadowaudit-uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['package.json', 'package-lock.json', 'yarn.lock'];
+    if (allowed.includes(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only package.json, package-lock.json, or yarn.lock allowed'));
+    }
+  },
+});
+
 const createTargetSchema = z.object({
   name: z.string().min(1).max(255),
   type: z.enum(['npm', 'docker', 'filesystem']),
   value: z.string().min(1).max(1024),
 });
+
+// Upload a package.json to scan the user's own project
+router.post(
+  '/upload',
+  upload.single('packageFile'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.file) throw new AppError(400, 'No file uploaded');
+      const name = (req.body.name as string)?.trim() || path.basename(req.file.originalname, '.json');
+
+      // Save uploaded file to a stable location the scanner can read
+      const destDir = `/tmp/shadowaudit-projects/${Date.now()}`;
+      fs.mkdirSync(destDir, { recursive: true });
+      const destFile = path.join(destDir, req.file.originalname);
+      fs.copyFileSync(req.file.path, destFile);
+      fs.unlinkSync(req.file.path); // remove temp upload
+
+      const target = await targetsRepository.create({
+        name,
+        type: 'filesystem',
+        value: destDir,
+      });
+      await addScanJob(target.id, 'filesystem', destDir);
+
+      const body: ApiResponse<Target> = { success: true, data: target };
+      res.status(201).json(body);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.post(
   '/',

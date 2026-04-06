@@ -28,6 +28,16 @@ export async function deleteTarget(id: string): Promise<void> {
   await client.delete(`/targets/${id}`);
 }
 
+export async function uploadPackageFile(name: string, file: File): Promise<Target> {
+  const form = new FormData();
+  form.append('name', name);
+  form.append('packageFile', file);
+  const { data } = await client.post<Target>('/targets/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
 export async function getScanHistory(id: string): Promise<ScanResult[]> {
   try {
     const { data } = await client.get<ScanResult[]>(`/targets/${id}/scans`);

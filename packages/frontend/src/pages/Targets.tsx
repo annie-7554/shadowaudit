@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { getTargets, createTarget, deleteTarget, getScanHistory } from '../api/targets';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { getTargets, createTarget, deleteTarget, getScanHistory, uploadPackageFile } from '../api/targets';
 import { ScanStatus } from '../components/ScanStatus';
 import { VulnerabilityTable } from '../components/VulnerabilityTable';
 import type { Target, ScanResult, TargetType } from '../types';
@@ -107,6 +107,12 @@ export const Targets: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const [uploadName, setUploadName] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const fetchTargets = useCallback(async () => {
     try {
       const data = await getTargets();
@@ -147,6 +153,25 @@ export const Targets: React.FC = () => {
       setTargets((prev) => prev.filter((t) => t.id !== target.id));
     } catch {
       alert('Failed to delete target. Is the backend running?');
+    }
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) { setUploadError('Please select a file.'); return; }
+    const name = uploadName.trim() || uploadFile.name.replace('.json', '');
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await uploadPackageFile(name, uploadFile);
+      setUploadName('');
+      setUploadFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      await fetchTargets();
+    } catch {
+      setUploadError('Upload failed. Is the backend running?');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -200,6 +225,46 @@ export const Targets: React.FC = () => {
           </button>
         </form>
         {formError && <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '0.85rem' }}>⚠️ {formError}</p>}
+      </div>
+
+      {/* Upload your own package.json */}
+      <div className="sa-card" style={{ marginBottom: '24px', borderColor: '#d4ff0033' }}>
+        <h2 className="sa-section-title">📂 Scan Your Own Project</h2>
+        <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '12px' }}>
+          Upload your <code style={{ color: '#d4ff00' }}>package.json</code> or <code style={{ color: '#d4ff00' }}>package-lock.json</code> to scan your own project's dependencies for CVEs.
+        </p>
+        <form onSubmit={handleUpload} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 180px' }}>
+            <label className="sa-label">Project Name</label>
+            <input
+              className="sa-input"
+              type="text"
+              placeholder="my-project"
+              value={uploadName}
+              onChange={(e) => setUploadName(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '2 1 240px' }}>
+            <label className="sa-label">package.json / package-lock.json</label>
+            <input
+              ref={fileInputRef}
+              className="sa-input"
+              type="file"
+              accept=".json,.lock"
+              style={{ paddingTop: '6px' }}
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          <button
+            type="submit"
+            className="sa-btn-primary"
+            disabled={uploading || !uploadFile}
+            style={{ flex: '0 0 auto' }}
+          >
+            {uploading ? 'Scanning…' : '⬆ Upload & Scan'}
+          </button>
+        </form>
+        {uploadError && <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '0.85rem' }}>⚠️ {uploadError}</p>}
       </div>
 
       {/* Targets table */}
