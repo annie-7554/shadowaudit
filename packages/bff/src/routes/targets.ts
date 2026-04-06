@@ -10,7 +10,7 @@ const router = Router();
 
 const createTargetSchema = z.object({
   name: z.string().min(1).max(255),
-  type: z.enum(['npm', 'image', 'filesystem']),
+  type: z.enum(['npm', 'docker', 'filesystem']),
   value: z.string().min(1).max(1024),
 });
 

@@ -31,7 +31,9 @@ services:
       - "6379:6379"
 
   bff:
-    build: ./packages/bff
+    build:
+      context: .
+      dockerfile: packages/bff/Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -49,14 +51,16 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 10s
 
   scanner:
-    build: ./packages/scanner
+    build:
+      context: .
+      dockerfile: packages/scanner/Dockerfile
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_DB: shadowaudit
@@ -74,7 +78,9 @@ services:
         condition: service_healthy
 
   notifier:
-    build: ./packages/notifier
+    build:
+      context: .
+      dockerfile: packages/notifier/Dockerfile
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_DB: shadowaudit
@@ -91,7 +97,9 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./packages/frontend
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
     ports:
       - "8080:80"
     depends_on:

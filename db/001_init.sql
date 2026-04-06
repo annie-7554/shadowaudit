@@ -7,7 +7,7 @@ CREATE TABLE users (
 CREATE TABLE targets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('npm', 'image', 'filesystem')),
+  type TEXT NOT NULL CHECK (type IN ('npm', 'docker', 'filesystem')),
   value TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_scanned_at TIMESTAMPTZ

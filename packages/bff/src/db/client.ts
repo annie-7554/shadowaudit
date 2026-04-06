@@ -1,11 +1,11 @@
 import { Pool, QueryResult, QueryResultRow } from 'pg';
 
 const pool = new Pool({
-  host: process.env.DB_HOST ?? 'localhost',
-  port: parseInt(process.env.DB_PORT ?? '5432', 10),
-  database: process.env.DB_NAME ?? 'shadowaudit',
-  user: process.env.DB_USER ?? 'postgres',
-  password: process.env.DB_PASSWORD ?? '',
+  host: process.env.POSTGRES_HOST ?? 'localhost',
+  port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
+  database: process.env.POSTGRES_DB ?? 'shadowaudit',
+  user: process.env.POSTGRES_USER ?? 'shadowaudit',
+  password: process.env.POSTGRES_PASSWORD ?? 'shadowaudit',
   max: parseInt(process.env.DB_POOL_MAX ?? '10', 10),
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,

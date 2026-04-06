@@ -1,18 +1,21 @@
 # syntax=docker/dockerfile:1
-LABEL org.opencontainers.image.source=https://github.com/OWNER/shadowaudit
 
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY src/ ./src/
-COPY tsconfig*.json ./
-RUN npx tsc
+COPY package*.json tsconfig.base.json ./
+COPY packages/scanner/package*.json ./packages/scanner/
+RUN npm ci --workspace=packages/scanner
+COPY packages/scanner/src ./packages/scanner/src
+COPY packages/scanner/tsconfig*.json ./packages/scanner/
+RUN cd packages/scanner && npx tsc
 
 FROM node:20-alpine
+RUN apk add --no-cache curl && \
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json tsconfig.base.json ./
+COPY packages/scanner/package*.json ./packages/scanner/
+RUN npm ci --workspace=packages/scanner --omit=dev
+COPY --from=builder /app/packages/scanner/dist ./dist
 USER node
-EXPOSE 0
 CMD ["node", "dist/index.js"]

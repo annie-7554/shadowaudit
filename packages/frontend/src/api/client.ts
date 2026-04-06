@@ -6,7 +6,13 @@ const client = axios.create({
 });
 
 client.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Unwrap BFF ApiResponse envelope: { success, data } → data
+    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   (error) => {
     const message =
       error.response?.data?.message ?? error.message ?? 'An unexpected error occurred';
