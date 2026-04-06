@@ -43,7 +43,7 @@ export interface ParsedVulnerability {
 
 export interface ScanJobData {
   targetId: string;
-  type: 'npm' | 'image' | 'filesystem';
+  type: 'npm' | 'docker' | 'filesystem';
   value: string;
 }
 

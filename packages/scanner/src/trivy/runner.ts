@@ -39,18 +39,24 @@ export class TrivyRunner {
     value: string,
   ): Promise<TrivyRawOutput> {
     const args =
-      type === 'image'
-        ? ['image', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM', '--format', 'json', '--quiet', value]
-        : ['fs', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM', '--format', 'json', '--quiet', value];
+      type === 'docker'
+        ? ['image', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value]
+        : ['fs', '--ignore-unfixed', '--severity', 'HIGH,CRITICAL,MEDIUM,LOW', '--format', 'json', '--quiet', value];
 
     return TrivyRunner.execute(args);
   }
 
   private static async runConfigScan(): Promise<TrivyRawOutput> {
+    // Only run if k8s directory exists
+    const fs = await import('fs');
+    if (!fs.existsSync('./k8s')) return { Results: [] };
     return TrivyRunner.execute(['config', '--format', 'json', '--quiet', './k8s']);
   }
 
   private static async runSecretScan(): Promise<TrivyRawOutput> {
+    // Only run if current directory exists and has files
+    const fs = await import('fs');
+    if (!fs.existsSync('.')) return { Results: [] };
     return TrivyRunner.execute(['fs', '--scanners', 'secret', '--format', 'json', '--quiet', '.']);
   }
 
