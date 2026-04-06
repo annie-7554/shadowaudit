@@ -58,18 +58,53 @@ export class TargetsRepository {
   }
 
   async getScanHistory(targetId: string, limit = 20): Promise<ScanResult[]> {
-    const result = await query<ScanResult>(
+    const result = await query<{
+      id: string; targetId: string; status: string;
+      criticalCount: number; highCount: number; mediumCount: number; lowCount: number;
+      scannedAt: string; vulnerabilities: string;
+    }>(
       `SELECT id, target_id AS "targetId", status,
          critical_count AS "criticalCount", high_count AS "highCount",
          medium_count AS "mediumCount", low_count AS "lowCount",
-         created_at AS "createdAt"
+         created_at AS "scannedAt",
+         COALESCE(vulnerabilities::text, '[]') AS vulnerabilities
        FROM scan_results
        WHERE target_id = $1
        ORDER BY created_at DESC
        LIMIT $2`,
       [targetId, limit],
     );
-    return result.rows;
+
+    return result.rows.map((row) => {
+      const vulns: Array<{
+        cveId: string; packageName: string; installedVersion: string;
+        fixedVersion: string | null; severity: string; cvssScore: number | null; description: string;
+      }> = JSON.parse(row.vulnerabilities);
+
+      return {
+        id: row.id,
+        targetId: row.targetId,
+        status: row.status as ScanResult['status'],
+        scannedAt: row.scannedAt,
+        summary: {
+          critical: row.criticalCount,
+          high: row.highCount,
+          medium: row.mediumCount,
+          low: row.lowCount,
+          unknown: 0,
+        },
+        vulnerabilities: vulns.map((v) => ({
+          id: v.cveId,
+          cveId: v.cveId,
+          packageName: v.packageName,
+          installedVersion: v.installedVersion,
+          fixedVersion: v.fixedVersion ?? null,
+          severity: v.severity.toUpperCase() as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN',
+          cvssScore: v.cvssScore ?? null,
+          description: v.description,
+        })),
+      } as unknown as ScanResult;
+    });
   }
 
   async deleteById(id: string): Promise<boolean> {

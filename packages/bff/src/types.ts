@@ -20,15 +20,30 @@ export interface CreateTargetDTO {
   value: string;
 }
 
+export interface Vulnerability {
+  id: string;
+  cveId: string;
+  packageName: string;
+  installedVersion: string;
+  fixedVersion: string | null;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+  cvssScore: number | null;
+  description: string;
+}
+
 export interface ScanResult {
   id: string;
   targetId: string;
   status: 'running' | 'completed' | 'failed';
-  criticalCount: number;
-  highCount: number;
-  mediumCount: number;
-  lowCount: number;
-  createdAt: string;
+  scannedAt: string;
+  summary: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    unknown: number;
+  };
+  vulnerabilities: Vulnerability[];
 }
 
 export interface DashboardStats {
